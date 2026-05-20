@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RGVIZ — Architectural Visualization</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0b0a;--text:#ece8e0;--muted:#6a6560;--accent:#c9b99a;--border:rgba(201,185,154,0.13);--border-h:rgba(201,185,154,0.38)}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;overflow-x:hidden;cursor:none}
+#cur{position:fixed;width:7px;height:7px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+#ring{position:fixed;width:36px;height:36px;border:1px solid var(--accent);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,opacity .3s;opacity:.45;mix-blend-mode:difference}
+#ring.big{width:68px;height:68px;opacity:.85}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;justify-content:space-between;align-items:center;padding:26px 52px}
+.logo{font-size:11px;letter-spacing:.32em;color:var(--text);text-decoration:none}
+.nav-r{display:flex;gap:40px}
+.nav-r a{font-size:10px;letter-spacing:.22em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .3s}
+.nav-r a:hover{color:var(--text)}
+#hero{height:100vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:0 52px 56px}
+.hero-frame{position:absolute;inset:0;overflow:hidden;background:#000}
+.hero-frame iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none;pointer-events:none}
+.hero-veil{position:absolute;inset:0;background:linear-gradient(170deg,rgba(11,11,10,.25) 0%,rgba(11,11,10,.75) 100%)}
+.hero-text{position:relative;z-index:2}
+.hero-big{font-size:clamp(78px,13vw,168px);font-weight:300;letter-spacing:-.03em;line-height:.88;color:var(--text)}
+.hero-sub{margin-top:26px;display:flex;align-items:center;gap:24px;font-size:10px;letter-spacing:.32em;color:var(--accent);text-transform:uppercase}
+.hero-sub::before{content:'';display:block;width:44px;height:1px;background:var(--accent)}
+.scroll-hint{position:absolute;bottom:56px;right:52px;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:9px;letter-spacing:.35em;color:var(--muted);text-transform:uppercase}
+.sline{width:1px;height:54px;background:var(--muted);animation:sl 1.7s ease-in-out infinite}
+@keyframes sl{0%,100%{opacity:1;transform:scaleY(1)}50%{opacity:.25;transform:scaleY(.35)}}
+.mq{overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:15px 0}
+.mq-t{display:flex;gap:48px;animation:mqr 24s linear infinite;width:max-content}
+.mq-i{font-size:10px;letter-spacing:.28em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.mq-d{width:4px;height:4px;background:var(--accent);border-radius:50%;align-self:center;flex-shrink:0}
+@keyframes mqr{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#work{padding:108px 52px 80px}
+.stag{font-size:9px;letter-spacing:.45em;color:var(--muted);text-transform:uppercase;margin-bottom:68px}
+.proj{display:grid;grid-template-columns:52px 1fr 400px;align-items:center;gap:0;border-top:1px solid var(--border);padding:34px 0;cursor:none;position:relative;transition:border-color .4s;text-decoration:none;color:inherit}
+.proj:last-child{border-bottom:1px solid var(--border)}
+.proj:hover{border-color:var(--border-h)}
+.pn{font-size:11px;letter-spacing:.15em;color:var(--muted)}
+.pi{padding:0 36px 0 0}
+.pname{font-size:clamp(28px,4.2vw,56px);font-weight:300;letter-spacing:-.025em;line-height:1;color:var(--text);transition:color .35s}
+.proj:hover .pname{color:var(--accent)}
+.pmeta{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:9px;letter-spacing:.16em;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--muted);text-transform:uppercase}
+.pmedia{position:relative;overflow:hidden;border-radius:3px;aspect-ratio:16/9;background:#131210}
+.pmedia img,.pmedia video{width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.04);transition:opacity .5s,transform .8s cubic-bezier(.25,.46,.45,.94)}
+.proj:hover .pmedia img,.proj:hover .pmedia video{opacity:1;transform:scale(1)}
+.parr{position:absolute;top:34px;right:0;font-size:17px;color:var(--muted);transition:transform .35s,color .35s}
+.proj:hover .parr{color:var(--accent);transform:rotate(45deg) translate(2px,-2px)}
+#ghost{position:fixed;width:320px;pointer-events:none;z-index:150;opacity:0;transition:opacity .35s;border-radius:3px;overflow:hidden;transform:translate(-50%,-55%)}
+#ghost img,#ghost video{width:100%;display:block;max-height:200px;object-fit:cover}
+#clients{padding:78px 52px;border-top:1px solid var(--border)}
+.cg{margin-top:52px;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border)}
+.cc{padding:26px 22px;font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;transition:all .3s}
+.cc:hover{background:rgba(201,185,154,.06);color:var(--text)}
+#about{padding:144px 52px;display:grid;grid-template-columns:1fr 1fr;gap:96px;align-items:start}
+.ah{font-size:clamp(30px,4.6vw,56px);font-weight:300;line-height:1.15;letter-spacing:-.025em}
+.ah em{color:var(--accent);font-style:normal}
+.ac{display:flex;flex-direction:column}
+.ar{border-top:1px solid var(--border);padding:22px 0}
+.ar:last-child{border-bottom:1px solid var(--border)}
+.arl{font-size:9px;letter-spacing:.34em;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
+.arv{font-size:13px;line-height:1.65;color:var(--text)}
+#contact{padding:120px 52px;border-top:1px solid var(--border);text-align:center}
+.cbig{font-size:clamp(58px,12vw,144px);font-weight:300;letter-spacing:-.04em;line-height:.88;margin-bottom:60px}
+.cbig span{color:var(--accent)}
+.cmail{font-size:13px;letter-spacing:.1em;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:3px;transition:color .3s,border-color .3s;display:inline-block}
+.cmail:hover{color:var(--accent);border-color:var(--accent)}
+.soc{display:flex;gap:40px;justify-content:center;margin-top:52px}
+.soc a{font-size:9px;letter-spacing:.28em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .3s}
+.soc a:hover{color:var(--accent)}
+footer{padding:20px 52px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
+footer p{font-size:9px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.rv{opacity:0;transform:translateY(26px);transition:opacity .85s ease,transform .85s ease}
+.rv.on{opacity:1;transform:none}
+.loading-row{border-top:1px solid var(--border);padding:34px 0;display:flex;align-items:center;gap:20px}
+.loading-bar{height:1px;background:var(--border);animation:loadpulse 1.5s ease-in-out infinite}
+@keyframes loadpulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="ring"></div>
+<div id="ghost"></div>
+
+<nav>
+  <a class="logo" href="#">RG VIZ</a>
+  <div class="nav-r">
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#clients">Clients</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="hero-frame">
+    <iframe src="https://www.youtube.com/embed/RMgDApNq2KY?autoplay=1&mute=1&loop=1&playlist=RMgDApNq2KY&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=2" allow="autoplay;encrypted-media" allowfullscreen></iframe>
+  </div>
+  <div class="hero-veil"></div>
+  <div class="hero-text rv">
+    <div class="hero-big">RGVIZ</div>
+    <div class="hero-sub"><span>Architectural Visualization · México</span></div>
+  </div>
+  <div class="scroll-hint"><span>Scroll</span><div class="sline"></div></div>
+</section>
+
+<div class="mq">
+  <div class="mq-t">
+    <span class="mq-i">Architectural Visualization</span><span class="mq-d"></span>
+    <span class="mq-i">3D Rendering</span><span class="mq-d"></span>
+    <span class="mq-i">Visual Storytelling</span><span class="mq-d"></span>
+    <span class="mq-i">Animation</span><span class="mq-d"></span>
+    <span class="mq-i">Virtual Tour</span><span class="mq-d"></span>
+    <span class="mq-i">High-End Renders</span><span class="mq-d"></span>
+    <span class="mq-i">Concept Development</span><span class="mq-d"></span>
+    <span class="mq-i">Architectural Visualization</span><span class="mq-d"></span>
+    <span class="mq-i">3D Rendering</span><span class="mq-d"></span>
+    <span class="mq-i">Visual Storytelling</span><span class="mq-d"></span>
+    <span class="mq-i">Animation</span><span class="mq-d"></span>
+    <span class="mq-i">Virtual Tour</span><span class="mq-d"></span>
+    <span class="mq-i">High-End Renders</span><span class="mq-d"></span>
+    <span class="mq-i">Concept Development</span><span class="mq-d"></span>
+  </div>
+</div>
+
+<section id="work">
+  <div class="stag rv">Selected Work</div>
+  <div class="projects-list" id="projectsList">
+    <div class="loading-row"><div class="loading-bar" style="width:40px"></div><div class="loading-bar" style="width:180px;flex:1"></div></div>
+    <div class="loading-row"><div class="loading-bar" style="width:40px"></div><div class="loading-bar" style="width:220px;flex:1"></div></div>
+    <div class="loading-row"><div class="loading-bar" style="width:40px"></div><div class="loading-bar" style="width:160px;flex:1"></div></div>
+  </div>
+</section>
+
+<section id="clients">
+  <div class="stag rv">Clients</div>
+  <div class="cg rv">
+    <div class="cc">Sordo Madaleno</div>
+    <div class="cc">Gensler Latinoamérica</div>
+    <div class="cc">Tulum Country Club</div>
+    <div class="cc">Lara Arquitectos</div>
+    <div class="cc">CC Design</div>
+    <div class="cc">VGZ</div>
+    <div class="cc">Boris Pena Architects</div>
+    <div class="cc">TAO México</div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="ah rv">Every image<br/>starts with<br/><em>a story.</em></div>
+  <div class="ac rv">
+    <div class="ar"><div class="arl">Studio</div><div class="arv">RGVIZ — Puebla, México</div></div>
+    <div class="ar"><div class="arl">What we do</div><div class="arv">High-end architectural renders that bring your designs to life. We help developers, architects and brands communicate their vision with clarity and emotion.</div></div>
+    <div class="ar"><div class="arl">Services</div><div class="arv">Still Rendering · Animation · Virtual Tour · Concept Visualization</div></div>
+    <div class="ar"><div class="arl">Director</div><div class="arv">Rommel — 8-person team of 3D artists, production and marketing</div></div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="cbig rv">Let's<br/><span>talk.</span></div>
+  <a class="cmail rv" href="mailto:hello@rgviz.com">hello@rgviz.com</a>
+  <div class="soc rv">
+    <a href="https://www.instagram.com/rg.viz/" target="_blank">Instagram</a>
+    <a href="https://www.facebook.com/RGVisualizations" target="_blank">Facebook</a>
+    <a href="https://linkedin.com/company/rg-viz" target="_blank">LinkedIn</a>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 RGVIZ</p>
+  <p>Crafting visuals that speak for your vision</p>
+</footer>
+
+<script>
+const SUPA_URL = 'https://lzmlenyafiklsidpmsrh.supabase.co';
+const SUPA_KEY = 'sb_publishable_hwtIKqyklqjfGAs-Nu8FvQ_WZDpLUVh';
+
+async function fetchProjects() {
+  const res = await fetch(`${SUPA_URL}/rest/v1/projects?select=*&order=sort_order.asc&published=eq.true`, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+  });
+  return res.json();
+}
+
+function renderProjects(projects) {
+  const list = document.getElementById('projectsList');
+  list.innerHTML = '';
+  projects.forEach((p, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const tags = (p.tags || []).map(t => `<span class="pill">${t}</span>`).join('');
+    const mediaEl = p.cover_type === 'video'
+      ? `<video src="${p.cover_url}" muted loop playsinline></video>`
+      : `<img src="${p.cover_url}" alt="${p.name}"/>`;
+
+    const el = document.createElement('a');
+    el.className = 'proj rv';
+    el.href = `project.html?slug=${p.slug}`;
+    el.dataset.ghost = p.ghost_url || p.cover_url || '';
+    el.innerHTML = `
+      <span class="pn">${num}</span>
+      <div class="pi">
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">
+          <span class="pill">${p.location || ''}</span>
+          ${tags}
+        </div>
+      </div>
+      <div class="pmedia">${mediaEl}</div>
+      <span class="parr">↗</span>
+    `;
+    list.appendChild(el);
+  });
+
+  document.querySelectorAll('.rv:not(.on)').forEach(el => obs.observe(el));
+
+  document.querySelectorAll('.proj').forEach(p => {
+    const src = p.dataset.ghost;
+    p.addEventListener('mouseenter', () => {
+      if (src) {
+        ghost.innerHTML = `<img src="${src}" alt="" style="width:100%;display:block;object-fit:cover;max-height:200px"/>`;
+        ghost.style.opacity = '1';
+      }
+      ring.classList.add('big');
+    });
+    p.addEventListener('mouseleave', () => { ghost.style.opacity = '0'; ring.classList.remove('big'); });
+    const vid = p.querySelector('video');
+    if (vid) {
+      p.addEventListener('mouseenter', () => vid.play().catch(() => {}));
+      p.addEventListener('mouseleave', () => vid.pause());
+    }
+  });
+}
+
+const cur = document.getElementById('cur');
+const ring = document.getElementById('ring');
+const ghost = document.getElementById('ghost');
+let mx=0,my=0,rx=0,ry=0,gx=0,gy=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cur.style.left=mx+'px'; cur.style.top=my+'px'; });
+(function tr(){ rx+=(mx-rx)*.1; ry+=(my-ry)*.1; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(tr); })();
+(function tg(){ gx+=(mx-gx)*.07; gy+=(my-gy)*.07; ghost.style.left=gx+'px'; ghost.style.top=gy+'px'; requestAnimationFrame(tg); })();
+document.querySelectorAll('a,.nav-r a').forEach(el => {
+  el.addEventListener('mouseenter', () => ring.classList.add('big'));
+  el.addEventListener('mouseleave', () => ring.classList.remove('big'));
+});
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('on'), i * 50); });
+}, { threshold: .08 });
+document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const ht = document.querySelector('.hero-text');
+  if (ht) ht.style.transform = `translateY(${y * .32}px)`;
+  const veil = document.querySelector('.hero-veil');
+  if (veil) veil.style.opacity = .3 + Math.min(y / 700, .48);
+});
+
+fetchProjects().then(renderProjects).catch(console.error);
+</script>
+</body>
+</html>
